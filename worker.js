@@ -2,15 +2,46 @@ export default {
   async fetch(request, env) {
     const corsHeaders = {
       "Access-Control-Allow-Origin": "*",
-      "Access-Control-Allow-Methods": "POST, OPTIONS",
+      "Access-Control-Allow-Methods": "POST, GET, OPTIONS",
       "Access-Control-Allow-Headers": "Content-Type",
     };
+
     if (request.method === "OPTIONS") {
       return new Response(null, { headers: corsHeaders });
     }
-    if (request.method !== "POST") {
-      return new Response("Method not allowed", {status: 405, headers: corsHeaders});
+
+    // GET request = show test page
+    if (request.method === "GET") {
+      return new Response(`
+        <!DOCTYPE html>
+        <html>
+        <head>
+          <title>Grill & Bakes API</title>
+          <style>
+            body { font-family: sans-serif; text-align: center; padding: 50px; background: #1a1a1a; color: white; }
+            h1 { color: #e67e22; }
+            .status { background: #27ae60; padding: 10px 30px; border-radius: 20px; display: inline-block; margin: 20px 0; }
+          </style>
+        </head>
+        <body>
+          <h1>🔥 Grill & Bakes API</h1>
+          <div class="status">✅ Worker is Live!</div>
+          <p>AI Chatbot backend is running perfectly.</p>
+          <p>Powered by NVIDIA DeepSeek V4 Flash</p>
+        </body>
+        </html>
+      `, {
+        headers: { 
+          ...corsHeaders, 
+          "Content-Type": "text/html" 
+        },
+      });
     }
+
+    if (request.method !== "POST") {
+      return new Response("Method not allowed", { status: 405, headers: corsHeaders });
+    }
+
     try {
       const body = await request.json();
       const response = await fetch("https://integrate.api.nvidia.com/v1/chat/completions", {
@@ -49,7 +80,7 @@ RULES:
 - Answer in the same language as the customer (English or Nepali)
 - For orders, guide them to use the "Order Now" button or WhatsApp
 - Keep replies under 100 words unless detailed info is needed`
-    },
+            },
             ...(body.messages || [])
           ],
           temperature: 0.7,
@@ -59,10 +90,10 @@ RULES:
       });
       const data = await response.json();
       return new Response(JSON.stringify(data), {
-        headers: {...corsHeaders, "Content-Type": "application/json"},
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     } catch (err) {
-      return new Response(JSON.stringify({error: err.message}), {
+      return new Response(JSON.stringify({ error: err.message }), {
         status: 500, headers: corsHeaders,
       });
     }
@@ -73,4 +104,4 @@ RULES:
 
 
 
-          
+
