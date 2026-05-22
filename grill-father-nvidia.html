@@ -1,0 +1,636 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Grill & Bakes Family Restaurant</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600&display=swap" rel="stylesheet">
+    <style>
+        :root { --primary: #e67e22; --secondary: #2c3e50; --success: #27ae60; --light: #f4f4f4; }
+        body { font-family: 'Poppins', sans-serif; margin: 0; background: var(--light); color: #333; }
+        
+        header { background: white; padding: 15px 5%; display: flex; justify-content: space-between; align-items: center; position: sticky; top: 0; z-index: 1000; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
+        .logo { font-size: 1.5rem; font-weight: bold; color: var(--primary); }
+        .menu-toggle { background: var(--primary); color: white; border: none; padding: 10px 20px; border-radius: 25px; cursor: pointer; font-weight: bold; }
+
+        .floating-order { position: fixed; bottom: 20px; right: 20px; background: var(--success); color: white; padding: 15px 25px; border-radius: 50px; font-weight: bold; box-shadow: 0 5px 15px rgba(0,0,0,0.2); z-index: 2000; cursor: pointer; border: none; font-size: 1rem; }
+
+        /* ===== CHATBOT STYLES ===== */
+        .chatbot-widget {
+            position: fixed;
+            bottom: 90px;
+            right: 20px;
+            z-index: 1999;
+            font-family: 'Poppins', sans-serif;
+        }
+
+        .chat-button {
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, var(--primary) 0%, #d46e1a 100%);
+            color: white;
+            border: none;
+            cursor: pointer;
+            font-size: 24px;
+            box-shadow: 0 4px 12px rgba(230, 126, 34, 0.4);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.3s ease;
+            animation: pulse 2s infinite;
+        }
+
+        .chat-button:hover { transform: scale(1.1); box-shadow: 0 6px 20px rgba(230, 126, 34, 0.6); }
+
+        @keyframes pulse {
+            0%, 100% { box-shadow: 0 4px 12px rgba(230, 126, 34, 0.4); }
+            50% { box-shadow: 0 4px 20px rgba(230, 126, 34, 0.8); }
+        }
+
+        .chat-window {
+            display: none;
+            width: 380px;
+            height: 600px;
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 5px 40px rgba(0,0,0,0.16);
+            position: absolute;
+            bottom: 80px;
+            right: 0;
+            flex-direction: column;
+            animation: slideUp 0.3s ease;
+        }
+
+        .chat-window.open { display: flex; }
+
+        @keyframes slideUp {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .chat-header {
+            background: linear-gradient(135deg, var(--primary) 0%, #d46e1a 100%);
+            color: white;
+            padding: 20px;
+            border-radius: 12px 12px 0 0;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .chat-header-info { display: flex; align-items: center; gap: 10px; }
+        .chat-avatar { width: 40px; height: 40px; border-radius: 50%; background: rgba(255,255,255,0.2); display: flex; align-items: center; justify-content: center; font-size: 20px; }
+        .chat-header h3 { margin: 0; font-size: 1rem; font-weight: 600; }
+        .chat-header p { margin: 3px 0 0 0; font-size: 0.78rem; opacity: 0.9; }
+
+        /* AI Badge */
+        .ai-badge {
+            background: rgba(255,255,255,0.2);
+            border: 1px solid rgba(255,255,255,0.4);
+            color: white;
+            padding: 2px 8px;
+            border-radius: 20px;
+            font-size: 0.65rem;
+            font-weight: 600;
+            letter-spacing: 0.5px;
+        }
+
+        .close-chat { background: none; border: none; color: white; font-size: 24px; cursor: pointer; padding: 0; }
+
+        .chat-messages {
+            flex: 1;
+            overflow-y: auto;
+            padding: 16px;
+            background: #fafafa;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .message { display: flex; gap: 8px; animation: fadeIn 0.3s ease; }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(8px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .message.user { justify-content: flex-end; }
+
+        .message-bubble {
+            max-width: 78%;
+            padding: 10px 14px;
+            border-radius: 12px;
+            word-wrap: break-word;
+            line-height: 1.5;
+            font-size: 0.9rem;
+        }
+
+        .message.bot .message-bubble {
+            background: white;
+            color: #333;
+            border: 1px solid #e8e8e8;
+            border-radius: 4px 12px 12px 12px;
+            box-shadow: 0 1px 4px rgba(0,0,0,0.06);
+        }
+
+        .message.user .message-bubble {
+            background: linear-gradient(135deg, var(--primary), #d46e1a);
+            color: white;
+            border-radius: 12px 4px 12px 12px;
+        }
+
+        /* Typing indicator */
+        .typing-indicator {
+            display: flex;
+            gap: 4px;
+            padding: 12px 16px;
+            background: white;
+            border: 1px solid #e8e8e8;
+            border-radius: 4px 12px 12px 12px;
+            width: fit-content;
+            box-shadow: 0 1px 4px rgba(0,0,0,0.06);
+        }
+
+        .typing-dot {
+            width: 7px; height: 7px;
+            border-radius: 50%;
+            background: #bbb;
+            animation: typingAnim 1.4s infinite;
+        }
+        .typing-dot:nth-child(2) { animation-delay: 0.2s; }
+        .typing-dot:nth-child(3) { animation-delay: 0.4s; }
+
+        @keyframes typingAnim {
+            0%, 60%, 100% { opacity: 0.4; transform: translateY(0); }
+            30% { opacity: 1; transform: translateY(-6px); }
+        }
+
+        /* Quick replies */
+        .quick-replies {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 6px;
+            padding: 8px 16px 0 16px;
+        }
+
+        .quick-btn {
+            background: white;
+            border: 1.5px solid var(--primary);
+            color: var(--primary);
+            padding: 5px 12px;
+            border-radius: 20px;
+            font-size: 0.78rem;
+            cursor: pointer;
+            font-family: 'Poppins', sans-serif;
+            transition: all 0.2s;
+        }
+
+        .quick-btn:hover { background: var(--primary); color: white; }
+
+        .chat-input-area {
+            padding: 12px;
+            background: white;
+            border-top: 1px solid #eee;
+            display: flex;
+            gap: 8px;
+            border-radius: 0 0 12px 12px;
+            align-items: center;
+        }
+
+        .chat-input {
+            flex: 1;
+            padding: 10px 14px;
+            border: 1.5px solid #e0e0e0;
+            border-radius: 24px;
+            font-family: 'Poppins', sans-serif;
+            font-size: 0.88rem;
+            outline: none;
+            transition: border-color 0.2s;
+            background: #fafafa;
+        }
+
+        .chat-input:focus { border-color: var(--primary); background: white; }
+
+        .send-btn {
+            background: var(--primary);
+            color: white;
+            border: none;
+            width: 40px; height: 40px;
+            border-radius: 50%;
+            cursor: pointer;
+            font-size: 16px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s;
+            flex-shrink: 0;
+        }
+
+        .send-btn:hover { background: #d46e1a; transform: scale(1.05); }
+        .send-btn:disabled { background: #ccc; cursor: not-allowed; transform: none; }
+
+        /* Error message style */
+        .error-bubble {
+            background: #fff3f3 !important;
+            border-color: #ffcccc !important;
+            color: #cc0000 !important;
+            font-size: 0.82rem !important;
+        }
+
+        /* ===== REST OF PAGE STYLES ===== */
+        .hero { background: linear-gradient(rgba(0,0,0,0.6), rgba(0,0,0,0.6)), url('https://images.unsplash.com/photo-1514326640560-7d063ef2aed5?auto=format&fit=crop&w=1350&q=80'); height: 35vh; background-size: cover; background-position: center; display: flex; align-items: center; justify-content: center; color: white; text-align: center; flex-direction: column; }
+        .special-title { text-align: center; margin: 30px 0; color: var(--primary); font-size: 1.8rem; font-weight: bold; }
+
+        .overlay { height: 100%; width: 0; position: fixed; z-index: 3000; top: 0; right: 0; background: rgba(44,62,80,0.98); overflow-y: auto; transition: 0.5s; }
+        .overlay-content { padding: 40px; color: white; display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 30px; }
+        .closebtn { position: absolute; top: 20px; right: 45px; font-size: 50px; color: white; cursor: pointer; text-decoration: none; }
+        .menu-cat h3 { color: var(--primary); border-bottom: 1px solid #555; }
+        .menu-cat ul { list-style: none; padding: 0; }
+
+        .container { max-width: 1200px; margin: auto; padding: 20px; }
+        .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 25px; }
+        .card { background: white; border-radius: 12px; overflow: hidden; box-shadow: 0 5px 15px rgba(0,0,0,0.1); text-align: center; }
+        .card img { width: 100%; height: 200px; object-fit: cover; }
+        .card-body { padding: 20px; }
+        .order-btn { background: var(--success); color: white; padding: 12px; border-radius: 5px; width: 100%; border: none; cursor: pointer; font-weight: bold; }
+
+        .modal { display: none; position: fixed; z-index: 4000; left: 0; top: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); }
+        .modal-content { background: white; margin: 5% auto; padding: 25px; border-radius: 15px; width: 90%; max-width: 450px; position: relative; }
+        .form-group { margin-bottom: 12px; }
+        .form-group label { display: block; font-weight: bold; margin-bottom: 5px; }
+        .form-group input, .form-group select { width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 8px; box-sizing: border-box; }
+
+        #suggestions { border: 1px solid #ccc; max-height: 150px; overflow-y: auto; display: none; background: white; border-radius: 0 0 8px 8px; }
+        .suggestion-item { padding: 10px; cursor: pointer; }
+        .suggestion-item:hover { background: #eee; }
+
+        .type-option { background: #f9f9f9; padding: 10px; margin-top: 10px; border-radius: 8px; border: 2px solid #eee; cursor: pointer; text-align: center; }
+        .type-option:hover { border-color: var(--primary); }
+
+        footer { background: var(--secondary); color: white; padding: 40px 20px; text-align: center; margin-top: 40px; }
+        .location-link { background: var(--primary); color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px; display: inline-block; margin-top: 10px; font-weight: bold; }
+
+        @media (max-width: 600px) {
+            .chat-window { width: calc(100vw - 40px); height: 500px; max-width: 380px; }
+            header { flex-direction: column; gap: 10px; }
+        }
+    </style>
+</head>
+<body>
+
+<header>
+    <div class="logo">🔥 Grill & Bakes</div>
+    <button class="menu-toggle" onclick="openNav()">☰ View Menu</button>
+</header>
+
+<button class="floating-order" onclick="openModal('')">🛒 Order Now</button>
+
+<!-- ===== CHATBOT WIDGET ===== -->
+<div class="chatbot-widget">
+    <button class="chat-button" onclick="toggleChat()" title="Chat with our AI assistant">💬</button>
+    <div class="chat-window" id="chatWindow">
+        <div class="chat-header">
+            <div class="chat-header-info">
+                <div class="chat-avatar">🍔</div>
+                <div>
+                    <h3>Grill & Bakes Assistant <span class="ai-badge">AI</span></h3>
+                    <p id="chatStatus">● Online — Ask me anything!</p>
+                </div>
+            </div>
+            <button class="close-chat" onclick="toggleChat()">✕</button>
+        </div>
+
+        <div class="chat-messages" id="chatMessages">
+            <div class="message bot">
+                <div class="message-bubble">
+                    👋 Welcome to <strong>Grill & Bakes</strong>! I'm your AI assistant.<br><br>
+                    I can help you with our menu, prices, ordering, location, and more. What would you like to know?
+                </div>
+            </div>
+        </div>
+
+        <!-- Quick Reply Buttons -->
+        <div class="quick-replies" id="quickReplies">
+            <button class="quick-btn" onclick="quickAsk('What is on the menu?')">📋 Menu</button>
+            <button class="quick-btn" onclick="quickAsk('How do I place an order?')">🛒 Order</button>
+            <button class="quick-btn" onclick="quickAsk('What are your best dishes?')">⭐ Best Dishes</button>
+            <button class="quick-btn" onclick="quickAsk('Where are you located?')">📍 Location</button>
+        </div>
+
+        <div class="chat-input-area">
+            <input 
+                type="text" 
+                class="chat-input" 
+                id="chatInput" 
+                placeholder="Ask about menu, orders..." 
+                onkeypress="handleChatKeypress(event)"
+            >
+            <button class="send-btn" id="sendBtn" onclick="sendChatMessage()">➤</button>
+        </div>
+    </div>
+</div>
+
+<div class="hero">
+    <h1>Welcome to Grill & Bakes Family Restaurant</h1>
+    <p>Premium Grills & Fresh Bakery Items</p>
+</div>
+
+<div id="myNav" class="overlay">
+    <a href="javascript:void(0)" class="closebtn" onclick="closeNav()">&times;</a>
+    <div class="overlay-content" id="fullMenuContent"></div>
+</div>
+
+<div id="orderModal" class="modal">
+    <div class="modal-content">
+        <h3>Place Your Order</h3>
+        <div class="form-group">
+            <label>Your Name:</label>
+            <input type="text" id="custName" placeholder="Enter name">
+        </div>
+        <div class="form-group">
+            <label>Item Name:</label>
+            <input type="text" id="orderName" onkeyup="showSuggestions(this.value)" placeholder="e.g. Pizza, Burger...">
+            <div id="suggestions"></div>
+        </div>
+        <div class="form-group">
+            <label>Contact Number:</label>
+            <input type="tel" id="custPhone" placeholder="Enter phone number">
+        </div>
+        <div class="form-group">
+            <label>Table No (If Dine-in):</label>
+            <input type="text" id="tableNum" placeholder="Table No">
+        </div>
+        <div class="type-option" onclick="sendOrder('Dine-In')"><strong>Dine-In</strong><br><small>रेस्टुरेन्टमै बसेर खाना खाने</small></div>
+        <div class="type-option" onclick="sendOrder('Takeaway')"><strong>Takeaway Packing</strong><br><small>प्याक गरेर लैजाने</small></div>
+        <div class="type-option" onclick="sendOrder('Delivery')"><strong>Home Delivery</strong><br><small>घरमै डेलिभरी मगाउने</small></div>
+        <button onclick="closeModal()" style="width:100%; background:none; border:none; color:red; margin-top:10px; cursor:pointer;">Cancel</button>
+    </div>
+</div>
+
+<div class="container">
+    <div class="special-title">Today's Special</div>
+    <div class="grid">
+        <div class="card">
+            <img src="Blog-image-Burger-vs-Sandwich.png" alt="Burger">
+            <div class="card-body"><h3>Burger & Sandwich</h3><button class="order-btn" onclick="openModal('Burger & Sandwich')">Order Now</button></div>
+        </div>
+        <div class="card">
+            <img src="tomato-mozzarella-pizza-FT-RECIPE0725-e7244e979c504188a049623668c15b2e.jpg" alt="Pizza">
+            <div class="card-body"><h3>Special Pizza</h3><button class="order-btn" onclick="openModal('Special Pizza')">Order Now</button></div>
+        </div>
+        <div class="card">
+            <img src="item-684bf09d25dfd.jpg" alt="Sekuwa">
+            <div class="card-body"><h3>Mutton Sekuwa</h3><button class="order-btn" onclick="openModal('Mutton Sekuwa')">Order Now</button></div>
+        </div>
+        <div class="card">
+            <img src="chicken-tikka-sizzler-platter-1200x800.jpg" alt="Sizzler">
+            <div class="card-body"><h3>Chicken Sizzler</h3><button class="order-btn" onclick="openModal('Chicken Sizzler')">Order Now</button></div>
+        </div>
+        <div class="card">
+            <img src="Classic-Club-Sandwich-FT-RECIPE0523-99327c9c87214026b9419b949ee13a9c.jpg" alt="Sandwich">
+            <div class="card-body"><h3>Club Sandwich</h3><button class="order-btn" onclick="openModal('Club Sandwich')">Order Now</button></div>
+        </div>
+        <div class="card">
+            <img src="item-684bf09d25dfd.jpg" alt="Pizza">
+            <div class="card-body"><h3>Zorba Pizza</h3><button class="order-btn" onclick="openModal('Zorba Pizza')">Order Now</button></div>
+        </div>
+        <div class="card">
+            <img src="plate-food-with-noodles-meat-vegetables_1197144-525.jpg" alt="Biryaani">
+            <div class="card-body"><h3>Biryaani</h3><button class="order-btn" onclick="openModal('Biryaani')">Order Now</button></div>
+        </div>
+        <div class="card">
+            <img src="corndog-ketchup-mayonaise-mustard-black-background-corndog-food-made-skewered-sausages-usually-hot-dogs-417602775.jpg" alt="Corn Dog">
+            <div class="card-body"><h3>Corn Dog</h3><button class="order-btn" onclick="openModal('Corn Dog')">Order Now</button></div>
+        </div>
+        <div class="card">
+            <img src="grilled-tandoori-chicken-12.jpg" alt="Grill Chicken">
+            <div class="card-body"><h3>Grill Chicken</h3><button class="order-btn" onclick="openModal('Grill Chicken')">Order Now</button></div>
+        </div>
+    </div>
+</div>
+
+<footer>
+    <p>📍 Kapan Marga, Kathmandu, Nepal</p>
+    <a href="https://maps.google.com/?cid=3322620306007613032" target="_blank" class="location-link">📍 View Location on Maps</a>
+    <p style="margin-top:20px;">📞 9804650880 | 📧 Grillandbake@gmail.com</p>
+    <p style="opacity:0.5; font-size:0.8rem;">DEVELOPED BY MRTEACHNICIAN</p>
+</footer>
+
+<script>
+    // ============================================
+    // ⚠️  CHANGE THIS TO YOUR CLOUDFLARE WORKER URL
+    // ============================================
+    const WORKER_URL = "https://thegrillfather.workers.dev";
+    // ============================================
+
+    const menuItems = [
+        "Vanilla Cake","Black Forest","Red Velvet","Donuts","Muffins","Apple Pie","Pastry","Cookies",
+        "Chicken Chilly","Roast Chicken","Chicken Lollipop","Chicken Drumstick","Chicken Tikka",
+        "Chicken Curry","Lemon Chicken","Garlic Chicken","Grill Chicken","Biryaani","Corn Dog",
+        "Family Combo","Mix Grill Platter","Veg Thali","Chicken Thali","Mutton Set","Butter Naan",
+        "Paneer Masala","Jeera Rice","Cold Coffee","Fresh Lime","Milkshake","Lassi","Cappuccino",
+        "Coke/Fanta","Burger & Sandwich","Club Sandwich","Carbonara","Mutton Sekuwa",
+        "Special Pizza","Zorba Pizza","Spaghetti Carbonara"
+    ];
+
+    // Conversation history for context
+    let conversationHistory = [];
+    let isBotTyping = false;
+
+    // ===== CHATBOT FUNCTIONS =====
+    function toggleChat() {
+        const win = document.getElementById('chatWindow');
+        win.classList.toggle('open');
+        if (win.classList.contains('open')) {
+            document.getElementById('chatInput').focus();
+        }
+    }
+
+    function quickAsk(text) {
+        document.getElementById('chatInput').value = text;
+        // Hide quick replies after first use
+        document.getElementById('quickReplies').style.display = 'none';
+        sendChatMessage();
+}
+
+    function handleChatKeypress(e) {
+        if (e.key === 'Enter') sendChatMessage();
+    }
+
+    function addMessage(text, sender, isError = false) {
+        const messagesDiv = document.getElementById('chatMessages');
+        const msgDiv = document.createElement('div');
+        msgDiv.className = `message ${sender}`;
+        const bubble = document.createElement('div');
+        bubble.className = `message-bubble ${isError ? 'error-bubble' : ''}`;
+        bubble.innerHTML = text;
+        msgDiv.appendChild(bubble);
+        messagesDiv.appendChild(msgDiv);
+        messagesDiv.scrollTop = messagesDiv.scrollHeight;
+    }
+
+    function showTyping() {
+        const messagesDiv = document.getElementById('chatMessages');
+        const typingDiv = document.createElement('div');
+        typingDiv.className = 'message bot';
+        typingDiv.id = 'typingIndicator';
+        typingDiv.innerHTML = `
+            <div class="typing-indicator">
+                <div class="typing-dot"></div>
+                <div class="typing-dot"></div>
+                <div class="typing-dot"></div>
+            </div>`;
+        messagesDiv.appendChild(typingDiv);
+        messagesDiv.scrollTop = messagesDiv.scrollHeight;
+    }
+
+    function hideTyping() {
+        const typing = document.getElementById('typingIndicator');
+        if (typing) typing.remove();
+    }
+
+    async function sendChatMessage() {
+        const input = document.getElementById('chatInput');
+        const sendBtn = document.getElementById('sendBtn');
+        const userMessage = input.value.trim();
+
+        if (!userMessage || isBotTyping) return;
+
+        // Clear input & disable button
+        input.value = '';
+        isBotTyping = true;
+        sendBtn.disabled = true;
+
+        // Add user message to UI
+        addMessage(userMessage, 'user');
+
+        // Add to history
+        conversationHistory.push({ role: 'user', content: userMessage });
+
+        // Show typing
+        showTyping();
+
+        // Update status
+        document.getElementById('chatStatus').textContent = '⏳ AI is thinking...';
+
+        try {
+            const response = await fetch(WORKER_URL, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ messages: conversationHistory })
+            });
+
+            if (!response.ok) {
+                throw new Error(`Server error: ${response.status}`);
+            }
+
+            const data = await response.json();
+
+            if (data.error) {
+                throw new Error(data.error);
+            }
+
+            // NVIDIA response format: data.choices[0].message.content
+            const botReply = data.choices[0].message.content;
+
+            // Add to history for context
+            conversationHistory.push({ role: 'assistant', content: botReply });
+
+            // Keep history to last 10 messages (5 pairs) to save tokens
+            if (conversationHistory.length > 10) {
+                conversationHistory = conversationHistory.slice(-10);
+            }
+
+            hideTyping();
+            addMessage(botReply, 'bot');
+            document.getElementById('chatStatus').textContent = '● Online — Ask me anything!';
+
+        } catch (error) {
+            hideTyping();
+            console.error('Chatbot error:', error);
+
+            let errorMsg = '⚠️ Sorry, I\'m having trouble connecting right now. Please try again or call us at <strong>9804650880</strong>!';
+            
+            // Check if worker URL is not set
+            if (WORKER_URL.includes('YOUR-WORKER-NAME')) {
+                errorMsg = '⚙️ <strong>Developer Note:</strong> Please update WORKER_URL in the script with your Cloudflare Worker URL.';
+            }
+
+            addMessage(errorMsg, 'bot', true);
+            document.getElementById('chatStatus').textContent = '● Online — Ask me anything!';
+        }
+
+        isBotTyping = false;
+        sendBtn.disabled = false;
+        input.focus();
+    }
+
+    // ===== MENU & ORDER FUNCTIONS =====
+    function openNav() {
+        document.getElementById("myNav").style.width = "100%";
+        renderMenu();
+    }
+    function closeNav() { document.getElementById("myNav").style.width = "0%"; }
+
+    function openModal(item) {
+        document.getElementById('orderName').value = item;
+        document.getElementById('orderModal').style.display = 'block';
+    }
+    function closeModal() { document.getElementById('orderModal').style.display = 'none'; }
+
+    function showSuggestions(val) {
+        let res = document.getElementById("suggestions");
+        res.innerHTML = '';
+        if (!val.length) { res.style.display = "none"; return; }
+        let list = menuItems.filter(i => i.toLowerCase().includes(val.toLowerCase()));
+        if (list.length) {
+            list.forEach(i => {
+                let div = document.createElement("div");
+                div.textContent = i;
+                div.className = "suggestion-item";
+                div.onclick = () => { document.getElementById('orderName').value = i; res.style.display = "none"; };
+                res.appendChild(div);
+            });
+            res.style.display = "block";
+        }
+    }
+
+    function sendOrder(type) {
+        const name = document.getElementById('custName').value;
+        const item = document.getElementById('orderName').value;
+        const phone = document.getElementById('custPhone').value;
+        const table = document.getElementById('tableNum').value;
+        if (!name || !item || !phone) { alert("Please fill Name, Item and Phone!"); return; }
+        let nep = type === 'Dine-In' ? "रेस्टुरेन्टमै बसेर" : (type === 'Takeaway' ? "प्याक गरेर लैजाने" : "घरमै डेलिभरी");
+        const waLink = `https://wa.me/9779804650880?text=*NEW ORDER*%0A👤 Name: ${name}%0A🍔 Item: ${item}%0A📞 Phone: ${phone}%0A🪑 Table: ${table || 'N/A'}%0A🍱 Type: ${type} (${nep})`;
+        window.open(waLink, '_blank');
+        closeModal();
+    }
+
+    function renderMenu() {
+        const categories = {
+            "🎂 Bake Items": ["Vanilla Cake","Black Forest","Red Velvet","Donuts","Muffins","Apple Pie","Pastry","Cookies"],
+            "🍗 Chicken Items": ["Chicken Chilly","Roast Chicken","Chicken Lollipop","Chicken Drumstick","Chicken Tikka","Chicken Curry","Lemon Chicken","Garlic Chicken","Grill Chicken"],
+            "🍽️ Family Food": ["Family Combo","Mix Grill Platter","Veg Thali","Chicken Thali","Mutton Set","Butter Naan","Paneer Masala","Jeera Rice","Biryaani"],
+            "🍕 Pizza & Fast Food": ["Special Pizza","Zorba Pizza","Burger & Sandwich","Club Sandwich","Corn Dog","Carbonara","Spaghetti Carbonara"],
+            "🔥 Sekuwa": ["Mutton Sekuwa"],
+            "🥤 Drinks": ["Cold Coffee","Fresh Lime","Milkshake","Lassi","Cappuccino","Coke/Fanta"]
+        };
+        let html = '';
+        for (let cat in categories) {
+            html += `<div class="menu-cat"><h3>${cat}</h3><ul>`;
+            categories[cat].forEach(item => { html += `<li>${item}</li>`; });
+            html += `</ul></div>`;
+        }
+        document.getElementById('fullMenuContent').innerHTML = html;
+    }
+
+    // Close modal on outside click
+    window.onclick = (e) => {
+        if (e.target === document.getElementById('orderModal')) closeModal();
+    };
+</script>
+</body>
+</html>
+ 
