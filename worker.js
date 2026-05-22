@@ -24,7 +24,7 @@ export default {
           messages: [
             {
               role: "system",
-              content: 'You are a friendly and helpful assistant for Grill & Bakes Family Restaurant located in Kapan Marga, Kathmandu, Nepal.
+              content: `You are a friendly and helpful assistant for Grill & Bakes Family Restaurant located in Kapan Marga, Kathmandu, Nepal.
 
 RESTAURANT INFO:
 - Phone: 9709035651
@@ -48,8 +48,8 @@ RULES:
 - Be warm, concise, and helpful
 - Answer in the same language as the customer (English or Nepali)
 - For orders, guide them to use the "Order Now" button or WhatsApp
-- Keep replies under 100 words unless detailed info is needed'
-            },
+- Keep replies under 100 words unless detailed info is needed`
+    },
             ...(body.messages || [])
           ],
           temperature: 0.7,
