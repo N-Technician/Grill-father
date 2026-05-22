@@ -1,0 +1,105 @@
+// ============================================
+// CLOUDFLARE WORKER — NVIDIA NIM API PROXY
+// Grill & Bakes Family Restaurant Chatbot
+// ============================================
+// SETUP STEPS:
+// 1. Go to workers.cloudflare.com → Create Worker
+// 2. Paste this entire code
+// 3. Settings → Variables → Add Secret:
+//    Name: NVIDIA_API_KEY
+//    Value: nvapi-xxxxxxxxxxxx  (your key from build.nvidia.com)
+// 4. Deploy → copy your worker URL
+// ============================================
+
+export default {
+  async fetch(request, env) {
+    const corsHeaders = {
+      "Access-Control-Allow-Origin": "*",
+      "Access-Control-Allow-Methods": "POST, OPTIONS",
+      "Access-Control-Allow-Headers": "Content-Type",
+    };
+
+    // Handle preflight
+    if (request.method === "OPTIONS") {
+      return new Response(null, { headers: corsHeaders });
+    }
+
+    if (request.method !== "POST") {
+      return new Response("Method not allowed", { status: 405, headers: corsHeaders });
+    }
+
+    try {
+      const body = await request.json();
+
+      const response = await fetch("https://integrate.api.nvidia.com/v1/chat/completions", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${env.NVIDIA_API_KEY}`,
+        },
+        body: JSON.stringify({
+          model: "meta/llama-3.1-8b-instruct",
+          messages: [
+            {
+              role: "system",
+              content: `You are a friendly and helpful assistant for Grill & Bakes Family Restaurant located in Kapan Marga, Kathmandu, Nepal.
+
+RESTAURANT INFO:
+- Phone: 9804650880
+- Email: Grillandbake@gmail.com
+- Location: Kapan Marga, Kathmandu
+
+MENU:
+Baked Items: Vanilla Cake, Black Forest, Red Velvet, Donuts, Muffins, Apple Pie, Pastry, Cookies
+Chicken: Chicken Chilly, Roast Chicken, Chicken Lollipop, Chicken Drumstick, Chicken Tikka, Chicken Curry, Lemon Chicken, Garlic Chicken, Grill Chicken
+Family Meals: Family Combo, Mix Grill Platter, Veg Thali, Chicken Thali, Mutton Set, Butter Naan, Paneer Masala, Jeera Rice, Biryaani
+Fast Food: Burger & Sandwich, Club Sandwich, Corn Dog, Carbonara, Spaghetti Carbonara
+Pizza: Special Pizza, Zorba Pizza
+Sekuwa: Mutton Sekuwa
+Drinks: Cold Coffee, Fresh Lime, Milkshake, Lassi, Cappuccino, Coke/Fanta
+
+ORDERING:
+- Dine-In, Takeaway, and Home Delivery available
+- Orders via WhatsApp: 9779804650880
+
+RULES:
+- Be warm, concise, and helpful
+- Answer in the same language as the customer (English or Nepali)
+- For orders, guide them to use the "Order Now" button or WhatsApp
+- Keep replies under 100 words unless detailed info is needed`
+            },
+            ...(body.messages || [])
+          ],
+          temperature: 0.7,
+          top_p: 1,
+          max_tokens: 400,
+          stream: false,
+        }),
+      });
+
+      const data = await response.json();
+
+      // Handle NVIDIA API errors
+      if (!response.ok) {
+        return new Response(JSON.stringify({ 
+          error: data.message || "NVIDIA API error",
+          status: response.status 
+        }), {
+          status: response.status,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+
+      return new Response(JSON.stringify(data), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+
+    } catch (err) {
+      return new Response(JSON.stringify({ error: err.message }), {
+        status: 500,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+  },
+};
+            
