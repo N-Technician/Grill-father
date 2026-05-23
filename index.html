@@ -1,0 +1,755 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>The Grill Father Restaurant</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600&display=swap" rel="stylesheet">
+    <style>
+        :root { --primary: #e67e22; --secondary: #2c3e50; --success: #27ae60; --light: #f4f4f4; }
+        * { box-sizing: border-box; }
+        body { font-family: 'Poppins', sans-serif; margin: 0; background: var(--light); color: #333; padding-bottom: 70px; }
+
+        header { background: white; padding: 15px 5%; display: flex; justify-content: space-between; align-items: center; position: sticky; top: 0; z-index: 1000; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
+        .logo { font-size: 1.5rem; font-weight: bold; color: var(--primary); }
+        .menu-toggle { background: var(--primary); color: white; border: none; padding: 10px 20px; border-radius: 25px; cursor: pointer; font-weight: bold; }
+
+        .floating-order { position: fixed; bottom: 85px; right: 20px; background: var(--success); color: white; padding: 15px 25px; border-radius: 50px; font-weight: bold; box-shadow: 0 5px 15px rgba(0,0,0,0.2); z-index: 2000; cursor: pointer; border: none; font-size: 1rem; }
+
+        /* CHATBOT */
+        .chatbot-widget { position: fixed; bottom: 160px; right: 20px; z-index: 6000; font-family: 'Poppins', sans-serif; }
+        .chat-button { width: 60px; height: 60px; border-radius: 50%; background: linear-gradient(135deg, var(--primary) 0%, #d46e1a 100%); color: white; border: none; cursor: pointer; font-size: 24px; box-shadow: 0 4px 12px rgba(230, 126, 34, 0.4); display: flex; align-items: center; justify-content: center; transition: all 0.3s ease; animation: pulse 2s infinite; }
+        .chat-button:hover { transform: scale(1.1); }
+        @keyframes pulse { 0%, 100% { box-shadow: 0 4px 12px rgba(230,126,34,0.4); } 50% { box-shadow: 0 4px 20px rgba(230,126,34,0.8); } }
+        .chat-window { display: none; width: 380px; height: 600px; background: white; border-radius: 12px; box-shadow: 0 5px 40px rgba(0,0,0,0.16); position: absolute; bottom: 80px; right: 0; flex-direction: column; animation: slideUp 0.3s ease; z-index: 6001; }
+        .chat-window.open { display: flex; }
+        @keyframes slideUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+        .chat-header { background: linear-gradient(135deg, var(--primary) 0%, #d46e1a 100%); color: white; padding: 20px; border-radius: 12px 12px 0 0; display: flex; justify-content: space-between; align-items: center; }
+        .chat-header-info { display: flex; align-items: center; gap: 10px; }
+        .chat-avatar { width: 40px; height: 40px; border-radius: 50%; background: rgba(255,255,255,0.2); display: flex; align-items: center; justify-content: center; font-size: 20px; }
+        .chat-header h3 { margin: 0; font-size: 1rem; font-weight: 600; }
+        .chat-header p { margin: 3px 0 0 0; font-size: 0.78rem; opacity: 0.9; }
+        .ai-badge { background: rgba(255,255,255,0.2); border: 1px solid rgba(255,255,255,0.4); color: white; padding: 2px 8px; border-radius: 20px; font-size: 0.65rem; font-weight: 600; }
+        .close-chat { background: none; border: none; color: white; font-size: 24px; cursor: pointer; padding: 0; }
+        .chat-messages { flex: 1; overflow-y: auto; padding: 16px; background: #fafafa; display: flex; flex-direction: column; gap: 10px; }
+        .message { display: flex; gap: 8px; animation: fadeIn 0.3s ease; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+        .message.user { justify-content: flex-end; }
+        .message-bubble { max-width: 78%; padding: 10px 14px; border-radius: 12px; word-wrap: break-word; line-height: 1.5; font-size: 0.9rem; }
+        .message.bot .message-bubble { background: white; color: #333; border: 1px solid #e8e8e8; border-radius: 4px 12px 12px 12px; box-shadow: 0 1px 4px rgba(0,0,0,0.06); }
+        .message.user .message-bubble { background: linear-gradient(135deg, var(--primary), #d46e1a); color: white; border-radius: 12px 4px 12px 12px; }
+        .typing-indicator { display: flex; gap: 4px; padding: 12px 16px; background: white; border: 1px solid #e8e8e8; border-radius: 4px 12px 12px 12px; width: fit-content; }
+        .typing-dot { width: 7px; height: 7px; border-radius: 50%; background: #bbb; animation: typingAnim 1.4s infinite; }
+        .typing-dot:nth-child(2) { animation-delay: 0.2s; }
+        .typing-dot:nth-child(3) { animation-delay: 0.4s; }
+        @keyframes typingAnim { 0%, 60%, 100% { opacity: 0.4; transform: translateY(0); } 30% { opacity: 1; transform: translateY(-6px); } }
+        .quick-replies { display: flex; flex-wrap: wrap; gap: 6px; padding: 8px 16px 0 16px; }
+        .quick-btn { background: white; border: 1.5px solid var(--primary); color: var(--primary); padding: 5px 12px; border-radius: 20px; font-size: 0.78rem; cursor: pointer; font-family: 'Poppins', sans-serif; transition: all 0.2s; }
+        .quick-btn:hover { background: var(--primary); color: white; }
+        .chat-input-area { padding: 12px; background: white; border-top: 1px solid #eee; display: flex; gap: 8px; border-radius: 0 0 12px 12px; align-items: center; }
+        .chat-input { flex: 1; padding: 10px 14px; border: 1.5px solid #e0e0e0; border-radius: 24px; font-family: 'Poppins', sans-serif; font-size: 0.88rem; outline: none; transition: border-color 0.2s; background: #fafafa; }
+        .chat-input:focus { border-color: var(--primary); background: white; }
+        .send-btn { background: var(--primary); color: white; border: none; width: 40px; height: 40px; border-radius: 50%; cursor: pointer; font-size: 16px; display: flex; align-items: center; justify-content: center; transition: all 0.2s; flex-shrink: 0; }
+        .send-btn:hover { background: #d46e1a; transform: scale(1.05); }
+        .send-btn:disabled { background: #ccc; cursor: not-allowed; transform: none; }
+
+        /* PAGE */
+        .hero { background: linear-gradient(rgba(0,0,0,0.6), rgba(0,0,0,0.6)), url('https://images.unsplash.com/photo-1514326640560-7d063ef2aed5?auto=format&fit=crop&w=1350&q=80'); height: 35vh; background-size: cover; background-position: center; display: flex; align-items: center; justify-content: center; color: white; text-align: center; flex-direction: column; }
+        .special-title { text-align: center; margin: 30px 0; color: var(--primary); font-size: 1.8rem; font-weight: bold; }
+        .overlay { height: 100%; width: 0; position: fixed; z-index: 2500; top: 0; right: 0; background: rgba(44,62,80,0.98); overflow-y: auto; transition: 0.5s; }
+        .overlay-content { padding: 40px; color: white; display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 30px; }
+        .closebtn { position: absolute; top: 20px; right: 45px; font-size: 50px; color: white; cursor: pointer; text-decoration: none; }
+        .menu-cat h3 { color: var(--primary); border-bottom: 1px solid #555; }
+        .menu-cat ul { list-style: none; padding: 0; }
+        .container { max-width: 1200px; margin: auto; padding: 20px; }
+        .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 25px; }
+        .card { background: white; border-radius: 12px; overflow: hidden; box-shadow: 0 5px 15px rgba(0,0,0,0.1); text-align: center; }
+        .card img { width: 100%; height: 200px; object-fit: cover; }
+        .card-body { padding: 20px; }
+        .order-btn { background: var(--success); color: white; padding: 12px; border-radius: 5px; width: 100%; border: none; cursor: pointer; font-weight: bold; }
+        .modal { display: none; position: fixed; z-index: 3500; left: 0; top: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); }
+        .modal-content { background: white; margin: 5% auto; padding: 25px; border-radius: 15px; width: 90%; max-width: 450px; position: relative; max-height: 85vh; overflow-y: auto; }
+        .form-group { margin-bottom: 12px; }
+        .form-group label { display: block; font-weight: bold; margin-bottom: 5px; }
+        .form-group input, .form-group select, .form-group textarea { width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 8px; box-sizing: border-box; font-family: 'Poppins', sans-serif; }
+        #suggestions { border: 1px solid #ccc; max-height: 150px; overflow-y: auto; display: none; background: white; border-radius: 0 0 8px 8px; }
+        .suggestion-item { padding: 10px; cursor: pointer; }
+        .suggestion-item:hover { background: #eee; }
+        .type-option { background: #f9f9f9; padding: 10px; margin-top: 10px; border-radius: 8px; border: 2px solid #eee; cursor: pointer; text-align: center; }
+        .type-option:hover { border-color: var(--primary); }
+        footer { background: var(--secondary); color: white; padding: 40px 20px; text-align: center; margin-top: 40px; }
+        .location-link { background: var(--primary); color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px; display: inline-block; margin-top: 10px; font-weight: bold; }
+
+        /* PARTY PACK */
+        .party-pack-section { background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%); padding: 60px 20px; margin-top: 50px; position: relative; overflow: hidden; }
+        .party-pack-section::before { content: ''; position: absolute; top: -50%; left: -50%; width: 200%; height: 200%; background: radial-gradient(circle at 30% 50%, rgba(230,126,34,0.08) 0%, transparent 50%), radial-gradient(circle at 70% 20%, rgba(230,126,34,0.05) 0%, transparent 40%); pointer-events: none; }
+        .party-pack-header { text-align: center; margin-bottom: 40px; position: relative; z-index: 1; }
+        .party-pack-header .tag { display: inline-block; background: var(--primary); color: white; padding: 4px 16px; border-radius: 20px; font-size: 0.75rem; font-weight: 600; letter-spacing: 1px; text-transform: uppercase; margin-bottom: 12px; }
+        .party-pack-header h2 { color: white; font-size: 2.2rem; margin: 0 0 10px 0; font-weight: 700; }
+        .party-pack-header h2 span { color: var(--primary); }
+        .party-pack-header p { color: rgba(255,255,255,0.65); font-size: 1rem; margin: 0; }
+        .party-features { display: flex; justify-content: center; gap: 12px; flex-wrap: wrap; margin-bottom: 40px; position: relative; z-index: 1; }
+        .party-feature-pill { background: rgba(255,255,255,0.07); border: 1px solid rgba(255,255,255,0.12); color: rgba(255,255,255,0.85); padding: 8px 16px; border-radius: 30px; font-size: 0.82rem; }
+        .party-pack-cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 18px; max-width: 1100px; margin: 0 auto 40px auto; position: relative; z-index: 1; }
+        .pack-card { background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); border-radius: 16px; padding: 28px 20px; text-align: center; transition: all 0.3s ease; cursor: pointer; position: relative; }
+        .pack-card:hover { background: rgba(230,126,34,0.12); border-color: rgba(230,126,34,0.4); transform: translateY(-4px); box-shadow: 0 12px 30px rgba(0,0,0,0.3); }
+        .pack-card.popular { border-color: var(--primary); background: rgba(230,126,34,0.08); }
+        .popular-badge { position: absolute; top: 12px; right: 12px; background: var(--primary); color: white; font-size: 0.65rem; padding: 3px 10px; border-radius: 20px; font-weight: 600; text-transform: uppercase; }
+        .pack-icon { font-size: 2.5rem; margin-bottom: 12px; }
+        .pack-card h3 { color: white; margin: 0 0 6px 0; font-size: 1.1rem; }
+        .pack-card .pack-people { color: var(--primary); font-weight: 600; font-size: 0.9rem; margin-bottom: 12px; }
+        .pack-card .pack-includes { color: rgba(255,255,255,0.55); font-size: 0.78rem; line-height: 1.7; }
+        .pack-select-btn { margin-top: 16px; background: transparent; border: 1.5px solid rgba(230,126,34,0.5); color: var(--primary); padding: 8px 20px; border-radius: 20px; font-size: 0.82rem; cursor: pointer; font-family: 'Poppins', sans-serif; font-weight: 600; transition: all 0.2s; }
+        .pack-card:hover .pack-select-btn, .pack-card.popular .pack-select-btn { background: var(--primary); color: white; border-color: var(--primary); }
+        .party-form-wrapper { max-width: 680px; margin: 0 auto; position: relative; z-index: 1; }
+        .party-form-box { background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.1); border-radius: 20px; padding: 35px 30px; }
+        .party-form-box h3 { color: white; margin: 0 0 6px 0; font-size: 1.2rem; }
+        .party-form-box > p { color: rgba(255,255,255,0.5); font-size: 0.82rem; margin: 0 0 25px 0; }
+        .party-form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+        .party-form-grid .full-width { grid-column: 1 / -1; }
+        .party-field label { display: block; color: rgba(255,255,255,0.7); font-size: 0.8rem; font-weight: 600; margin-bottom: 6px; text-transform: uppercase; letter-spacing: 0.5px; }
+        .party-field input, .party-field select, .party-field textarea { width: 100%; padding: 11px 14px; background: rgba(255,255,255,0.07); border: 1px solid rgba(255,255,255,0.15); border-radius: 10px; color: white; font-family: 'Poppins', sans-serif; font-size: 0.88rem; box-sizing: border-box; outline: none; transition: border-color 0.2s; }
+        .party-field input::placeholder, .party-field textarea::placeholder { color: rgba(255,255,255,0.3); }
+        .party-field select option { background: #1a1a2e; color: white; }
+        .party-field input:focus, .party-field select:focus, .party-field textarea:focus { border-color: var(--primary); }
+        .food-checkbox-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); gap: 8px; margin-top: 6px; }
+        .food-check-item { display: flex; align-items: center; gap: 7px; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); padding: 8px 10px; border-radius: 8px; cursor: pointer; transition: all 0.2s; color: rgba(255,255,255,0.75); font-size: 0.8rem; }
+        .food-check-item:hover { border-color: var(--primary); background: rgba(230,126,34,0.08); }
+        .food-check-item input[type="checkbox"] { accent-color: var(--primary); cursor: pointer; width: 15px; height: 15px; }
+        .food-check-item.selected { border-color: var(--primary); background: rgba(230,126,34,0.15); color: white; }
+        .party-submit-btn { width: 100%; padding: 14px; background: linear-gradient(135deg, var(--primary), #d46e1a); color: white; border: none; border-radius: 12px; font-family: 'Poppins', sans-serif; font-size: 1rem; font-weight: 700; cursor: pointer; margin-top: 20px; transition: all 0.3s ease; box-shadow: 0 4px 15px rgba(230,126,34,0.3); }
+        .party-submit-btn:hover { transform: translateY(-2px); box-shadow: 0 8px 25px rgba(230,126,34,0.5); }
+        .party-success { display: none; text-align: center; padding: 30px; color: white; }
+        .party-success .success-icon { font-size: 4rem; margin-bottom: 15px; animation: bounceIn 0.5s ease; }
+        .party-success h3 { color: var(--primary); font-size: 1.4rem; margin-bottom: 8px; }
+        .party-success p { color: rgba(255,255,255,0.65); font-size: 0.9rem; }
+        @keyframes bounceIn { 0% { transform: scale(0); } 60% { transform: scale(1.2); } 100% { transform: scale(1); } }
+        .party-whatsapp-cta { text-align: center; margin-top: 22px; position: relative; z-index: 1; }
+        .party-whatsapp-cta p { color: rgba(255,255,255,0.4); font-size: 0.82rem; margin-bottom: 10px; }
+        .whatsapp-btn { display: inline-flex; align-items: center; gap: 8px; background: #25D366; color: white; padding: 12px 24px; border-radius: 30px; text-decoration: none; font-weight: 600; font-size: 0.9rem; transition: all 0.2s; box-shadow: 0 4px 15px rgba(37,211,102,0.3); }
+        .whatsapp-btn:hover { transform: translateY(-2px); box-shadow: 0 8px 25px rgba(37,211,102,0.5); }
+
+        /* MOBILE NAV */
+        .mobile-bottom-nav { display: none; position: fixed; bottom: 0; left: 0; right: 0; height: 65px; background: white; border-top: 1px solid #e8e8e8; box-shadow: 0 -4px 20px rgba(0,0,0,0.1); z-index: 5000; }
+        .bottom-nav-inner { display: flex; align-items: stretch; height: 100%; }
+        .bottom-nav-item { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px; cursor: pointer; background: none; border: none; font-family: 'Poppins', sans-serif; color: #999; text-decoration: none; transition: all 0.2s ease; padding: 6px 0; position: relative; }
+        .bottom-nav-item:active { transform: scale(0.92); }
+        .bottom-nav-item .nav-icon { font-size: 1.25rem; line-height: 1; transition: transform 0.2s ease; }
+        .bottom-nav-item .nav-label { font-size: 0.6rem; font-weight: 600; letter-spacing: 0.3px; line-height: 1; }
+        .bottom-nav-item.active { color: var(--primary); }
+        .bottom-nav-item.active .nav-icon { transform: translateY(-2px); }
+        .bottom-nav-item.active::after { content: ''; position: absolute; top: 0; left: 20%; right: 20%; height: 3px; background: var(--primary); border-radius: 0 0 4px 4px; }
+        .bottom-nav-item.nav-order { background: var(--primary); color: white !important; margin: 8px 5px; border-radius: 12px; flex: 1.1; }
+        .bottom-nav-item.nav-order:active { transform: scale(0.95); }
+        .bottom-nav-item.nav-order::after { display: none; }
+        .bottom-nav-item.nav-order .nav-label { color: white; font-weight: 700; }
+
+        @media (max-width: 768px) {
+            .mobile-bottom-nav { display: block; }
+            body { padding-bottom: 70px; }
+            .floating-order { display: none; }
+            .chatbot-widget { bottom: 80px; }
+        }
+        @media (max-width: 600px) {
+            .chat-window { width: calc(100vw - 40px); height: 500px; max-width: 380px; }
+            header { flex-direction: column; gap: 10px; }
+            .party-form-grid { grid-template-columns: 1fr; }
+            .party-pack-header h2 { font-size: 1.6rem; }
+        }
+    </style>
+</head>
+<body>
+
+<header>
+    <div class="logo">🔥 The Grill Father</div>
+    <button class="menu-toggle" onclick="openNav()">☰ View Menu</button>
+</header>
+
+<button class="floating-order" onclick="openModal('')">🛒 Order Now</button>
+
+<!-- CHATBOT -->
+<div class="chatbot-widget">
+    <button class="chat-button" onclick="toggleChat()" title="Chat with our AI assistant">💬</button>
+    <div class="chat-window" id="chatWindow">
+        <div class="chat-header">
+            <div class="chat-header-info">
+                <div class="chat-avatar">🍔</div>
+                <div>
+                    <h3>Grill Father Assistant <span class="ai-badge">AI</span></h3>
+                    <p id="chatStatus">● Online</p>
+                </div>
+            </div>
+            <button class="close-chat" onclick="toggleChat()">✕</button>
+        </div>
+        <div class="chat-messages" id="chatMessages">
+            <div class="message bot">
+                <div class="message-bubble">
+                    👋 Welcome to <strong>Grill Father Restaurant</strong>!<br><br>
+                    I can help with menu, orders, location, and party packs. What would you like to know?
+                </div>
+            </div>
+        </div>
+        <div class="quick-replies" id="quickReplies">
+            <button class="quick-btn" onclick="quickAsk('What is on the menu?')">📋 Menu</button>
+            <button class="quick-btn" onclick="quickAsk('How do I order?')">🛒 Order</button>
+            <button class="quick-btn" onclick="quickAsk('Best dishes?')">⭐ Best</button>
+            <button class="quick-btn" onclick="quickAsk('Where are you?')">📍 Location</button>
+        </div>
+        <div class="chat-input-area">
+            <input type="text" class="chat-input" id="chatInput" placeholder="Ask anything..." onkeypress="handleChatKeypress(event)">
+            <button class="send-btn" id="sendBtn" onclick="sendChatMessage()">➤</button>
+        </div>
+    </div>
+</div>
+
+<div class="hero">
+    <h1>Welcome to Grill Father Restaurant</h1>
+    <p>Premium Grills & Fresh Bakery Items</p>
+</div>
+
+<div id="myNav" class="overlay">
+    <a href="javascript:void(0)" class="closebtn" onclick="closeNav()">&times;</a>
+    <div class="overlay-content" id="fullMenuContent"></div>
+</div>
+
+<!-- ORDER MODAL -->
+<div id="orderModal" class="modal">
+    <div class="modal-content">
+        <h3>Place Your Order</h3>
+        <div class="form-group">
+            <label>Your Name:</label>
+            <input type="text" id="custName" placeholder="Enter name">
+        </div>
+        <div class="form-group">
+            <label>Item Name:</label>
+            <input type="text" id="orderName" onkeyup="showSuggestions(this.value)" placeholder="e.g. Pizza, Burger...">
+            <div id="suggestions"></div>
+        </div>
+        <div class="form-group">
+            <label>Contact Number:</label>
+            <input type="tel" id="custPhone" placeholder="Enter phone number">
+        </div>
+        <div class="form-group">
+            <label>Table No (If Dine-in):</label>
+            <input type="text" id="tableNum" placeholder="Table No">
+        </div>
+        <div class="type-option" onclick="sendOrder('Dine-In')"><strong>Dine-In</strong></div>
+        <div class="type-option" onclick="sendOrder('Takeaway')"><strong>Takeaway</strong></div>
+        <div class="type-option" onclick="sendOrder('Delivery')"><strong>Delivery</strong></div>
+        <button onclick="closeModal()" style="width:100%; background:none; border:none; color:red; margin-top:10px; cursor:pointer;">Cancel</button>
+    </div>
+</div>
+
+<!-- FOOD CARDS -->
+<div class="container" id="home">
+    <div class="special-title">Today's Special</div>
+    <div class="grid">
+        <div class="card">
+            <img src="https://raw.githubusercontent.com/N-Technician/Grill-Father/main/Blog-image-Burger-vs-Sandwich.png" alt="Burger">
+            <div class="card-body"><h3>Burger & Sandwich</h3><button class="order-btn" onclick="quickWhatsApp('Burger & Sandwich')">Order Now</button></div>
+        </div>
+        <div class="card">
+            <img src="https://raw.githubusercontent.com/N-Technician/Grill-Father/main/tomato-mozzarella-pizza-FT-RECIPE0725-e7244e979c504188a049623668c15b2e.jpg" alt="Pizza">
+            <div class="card-body"><h3>Special Pizza</h3><button class="order-btn" onclick="quickWhatsApp('Special Pizza')">Order Now</button></div>
+        </div>
+        <div class="card">
+            <img src="https://raw.githubusercontent.com/N-Technician/Grill-Father/main/item-684bf09d25dfd.jpg" alt="Sekuwa">
+            <div class="card-body"><h3>Mutton Sekuwa</h3><button class="order-btn" onclick="quickWhatsApp('Mutton Sekuwa')">Order Now</button></div>
+        </div>
+        <div class="card">
+            <img src="https://raw.githubusercontent.com/N-Technician/Grill-Father/main/chicken-tikka-sizzler-platter-1200x800.jpg" alt="Sizzler">
+            <div class="card-body"><h3>Chicken Sizzler</h3><button class="order-btn" onclick="quickWhatsApp('Chicken Sizzler')">Order Now</button></div>
+        </div>
+        <div class="card">
+            <img src="https://raw.githubusercontent.com/N-Technician/Grill-Father/main/Classic-Club-Sandwich-FT-RECIPE0523-99327c9c87214026b9419b949ee13a9c.jpg" alt="Sandwich">
+            <div class="card-body"><h3>Club Sandwich</h3><button class="order-btn" onclick="quickWhatsApp('Club Sandwich')">Order Now</button></div>
+        </div>
+        <div class="card">
+            <img src="https://raw.githubusercontent.com/N-Technician/Grill-Father/main/item-684bf09d25dfd.jpg" alt="Pizza">
+            <div class="card-body"><h3>Zorba Pizza</h3><button class="order-btn" onclick="quickWhatsApp('Zorba Pizza')">Order Now</button></div>
+        </div>
+        <div class="card">
+            <img src="https://raw.githubusercontent.com/N-Technician/Grill-Father/main/plate-food-with-noodles-meat-vegetables_1197144-525.jpg" alt="Biryaani">
+            <div class="card-body"><h3>Biryaani</h3><button class="order-btn" onclick="quickWhatsApp('Biryaani')">Order Now</button></div>
+        </div>
+        <div class="card">
+            <img src="https://raw.githubusercontent.com/N-Technician/Grill-Father/main/corndog-ketchup-mayonaise-mustard-black-background-corndog-food-made-skewered-sausages-usually-hot-dogs-417602775.jpg" alt="Corn Dog">
+            <div class="card-body"><h3>Corn Dog</h3><button class="order-btn" onclick="quickWhatsApp('Corn Dog')">Order Now</button></div>
+        </div>
+        <div class="card">
+            <img src="https://raw.githubusercontent.com/N-Technician/Grill-Father/main/grilled-tandoori-chicken-12.jpg" alt="Grill Chicken">
+            <div class="card-body"><h3>Grill Chicken</h3><button class="order-btn" onclick="quickWhatsApp('Grill Chicken')">Order Now</button></div>
+        </div>
+    </div>
+</div>
+
+<!-- PARTY PACK -->
+<section class="party-pack-section" id="party">
+    <div class="party-pack-header">
+        <div class="tag">🎉 Special Offering</div>
+        <h2>Party <span>Pack</span> Orders</h2>
+        <p>Bulk catering for birthdays, office events, family gatherings & more</p>
+    </div>
+
+    <div class="party-features">
+        <div class="party-feature-pill">🍔 Custom Menu</div>
+        <div class="party-feature-pill">👥 Min. 10 People</div>
+        <div class="party-feature-pill">🚚 Delivery Available</div>
+        <div class="party-feature-pill">📞 Prior Booking</div>
+    </div>
+
+    <div class="party-pack-cards">
+        <div class="pack-card" onclick="selectPack('Small Party (10–20 pax)')">
+            <div class="pack-icon">🎈</div>
+            <h3>Small Pack</h3>
+            <div class="pack-people">10 – 20 People</div>
+            <div class="pack-includes">Burger / Sandwich<br>Drinks included<br>1 special item</div>
+            <button class="pack-select-btn">Select</button>
+        </div>
+        <div class="pack-card popular" onclick="selectPack('Medium Party (20–40 pax)')">
+            <div class="popular-badge">Most Popular</div>
+            <div class="pack-icon">🎊</div>
+            <h3>Medium Pack</h3>
+            <div class="pack-people">20 – 40 People</div>
+            <div class="pack-includes">Burger + Biryani + Pizza<br>Drinks included<br>2 special items</div>
+            <button class="pack-select-btn">Select</button>
+        </div>
+        <div class="pack-card" onclick="selectPack('Large Party (40–80 pax)')">
+            <div class="pack-icon">🎁</div>
+            <h3>Large Pack</h3>
+            <div class="pack-people">40 – 80 People</div>
+            <div class="pack-includes">Full menu variety<br>Drinks + Desserts<br>Custom items</div>
+            <button class="pack-select-btn">Select</button>
+        </div>
+        <div class="pack-card" onclick="selectPack('Custom Pack (80+ pax)')">
+            <div class="pack-icon">✨</div>
+            <h3>Custom Pack</h3>
+            <div class="pack-people">80+ People</div>
+            <div class="pack-includes">Fully customized<br>Dedicated support<br>Flexible items</div>
+            <button class="pack-select-btn">Select</button>
+        </div>
+    </div>
+
+    <div class="party-form-wrapper">
+        <div class="party-form-box">
+            <h3>📋 Book Your Party Pack</h3>
+            <p>Fill in details and we'll confirm within hours.</p>
+
+            <div id="partyFormInner">
+                <div class="party-form-grid">
+                    <div class="party-field">
+                        <label>Your Name *</label>
+                        <input type="text" id="partyName" placeholder="Full name">
+                    </div>
+                    <div class="party-field">
+                        <label>Phone Number *</label>
+                        <input type="tel" id="partyPhone" placeholder="98XXXXXXXX">
+                    </div>
+                    <div class="party-field">
+                        <label>Event Type</label>
+                        <select id="partyEventType">
+                            <option value="">Select event...</option>
+                            <option>Birthday Party</option>
+                            <option>Office Party</option>
+                            <option>Family Gathering</option>
+                            <option>Wedding</option>
+                            <option>School/College</option>
+                            <option>Other</option>
+                        </select>
+                    </div>
+                    <div class="party-field">
+                        <label>Pack Size</label>
+                        <select id="partyPackSize">
+                            <option value="">Select pack...</option>
+                            <option>Small (10–20)</option>
+                            <option>Medium (20–40)</option>
+                            <option>Large (40–80)</option>
+                            <option>Custom (80+)</option>
+                        </select>
+                    </div>
+                    <div class="party-field">
+                        <label>Number of People *</label>
+                        <input type="number" id="partyPeople" placeholder="e.g. 30" min="10">
+                    </div>
+                    <div class="party-field">
+                        <label>Event Date *</label>
+                        <input type="date" id="partyDate">
+                    </div>
+                    <div class="party-field">
+                        <label>Delivery or Pickup?</label>
+                        <select id="partyDelivery">
+                            <option value="">Choose...</option>
+                            <option>Pickup from Restaurant</option>
+                            <option>Home / Venue Delivery</option>
+                        </select>
+                    </div>
+                    <div class="party-field">
+                        <label>Delivery Address</label>
+                        <input type="text" id="partyAddress" placeholder="Your address">
+                    </div>
+                    <div class="party-field full-width">
+                        <label>Select Food Items *</label>
+                        <div class="food-checkbox-grid" id="foodCheckboxGrid"></div>
+                    </div>
+                    <div class="party-field full-width">
+                        <label>Special Requests</label>
+                        <textarea id="partyNotes" rows="3" placeholder="Special instructions..."></textarea>
+                    </div>
+                </div>
+                <button class="party-submit-btn" onclick="submitPartyPack()">🎉 Submit Request</button>
+            </div>
+
+            <div class="party-success" id="partySuccess">
+                <div class="success-icon">🎊</div>
+                <h3>Request Sent!</h3>
+                <p>Our team will call you soon to confirm details.</p>
+            </div>
+        </div>
+
+        <div class="party-whatsapp-cta">
+            <p>Or chat on WhatsApp for faster booking</p>
+            <a href="https://wa.me/9779804650880?text=Hello%20Grill%20Father!%20I%20want%20to%20book%20a%20Party%20Pack." target="_blank" class="whatsapp-btn">💬 WhatsApp</a>
+        </div>
+    </div>
+</section>
+
+<footer>
+    <p>📍 Mid Baneshwor, Near Apex College</p>
+    <a href="https://maps.app.goo.gl/wD33BUkBjJBoETx36" target="_blank" class="location-link">📍 View on Maps</a>
+    <p style="margin-top:20px;">📞 9709035651 | 📧 GrillFatherRestro@gmail.com</p>
+    <p style="opacity:0.5; font-size:0.8rem;">POWERED BY GITHUB + NVIDIA AI</p>
+</footer>
+
+<!-- MOBILE NAV -->
+<nav class="mobile-bottom-nav">
+    <div class="bottom-nav-inner">
+        <button class="bottom-nav-item active" id="nav-home" onclick="mobileNavClick('home', this); window.scrollTo({top:0,behavior:'smooth'})">
+            <span class="nav-icon">🏠</span>
+            <span class="nav-label">Home</span>
+        </button>
+        <button class="bottom-nav-item" id="nav-menu" onclick="openNav(); mobileNavClick('menu', this)">
+            <span class="nav-icon">📋</span>
+            <span class="nav-label">Menu</span>
+        </button>
+        <button class="bottom-nav-item nav-order" onclick="closeNav(); openModal('')">
+            <span class="nav-icon">🛒</span>
+            <span class="nav-label">Order Now</span>
+        </button>
+        <button class="bottom-nav-item" id="nav-party" onclick="closeNav(); scrollToParty(); mobileNavClick('party', this)">
+            <span class="nav-icon">🎉</span>
+            <span class="nav-label">Party Pack</span>
+        </button>
+        <button class="bottom-nav-item" id="nav-chat" onclick="openChatDirect(); mobileNavClick('chat', this)">
+            <span class="nav-icon">💬</span>
+            <span class="nav-label">Chat</span>
+        </button>
+    </div>
+</nav>
+
+<script>
+    // ============================================
+    // CONFIGURATION - GITHUB SERVERLESS APPROACH
+    // ============================================
+    // Using Vercel or Netlify's free tier to proxy NVIDIA API calls
+    // OR using a simple fetch with CORS handling
+    
+    const NVIDIA_API_KEY = "nvapi-hNLjLn_eYpTlMPPmG2qFfL-7s5aOy7xNSJJdB9gNRDlOk5RXQ"; // Replace with YOUR API KEY
+    const NVIDIA_API_URL = "https://integrate.api.nvidia.com/v1/chat/completions";
+
+    const menuItems = [
+        "Vanilla Cake","Black Forest","Red Velvet","Donuts","Muffins","Apple Pie","Pastry","Cookies",
+        "Chicken Chilly","Roast Chicken","Chicken Lollipop","Chicken Drumstick","Chicken Tikka",
+        "Chicken Curry","Lemon Chicken","Garlic Chicken","Grill Chicken","Biryaani","Corn Dog",
+        "Family Combo","Mix Grill Platter","Veg Thali","Chicken Thali","Mutton Set","Butter Naan",
+        "Paneer Masala","Jeera Rice","Cold Coffee","Fresh Lime","Milkshake","Lassi","Cappuccino",
+        "Coke/Fanta","Burger & Sandwich","Club Sandwich","Carbonara","Mutton Sekuwa",
+        "Special Pizza","Zorba Pizza","Spaghetti Carbonara","Chicken Sizzler"
+    ];
+
+    const partyFoodItems = [
+        "🍔 Burger","🥪 Sandwich","🍕 Pizza","🍗 Grill Chicken","🍚 Biryaani",
+        "🥩 Mutton Sekuwa","🍖 Chicken Tikka","🍳 Chicken Sizzler","🌭 Corn Dog",
+        "🍜 Spaghetti","🍛 Chicken Thali","🍛 Veg Thali","🫓 Naan","🍰 Pastry",
+        "☕ Cold Coffee","🥤 Milkshake","🧃 Fresh Lime","🥛 Lassi"
+    ];
+
+    // Build party food checkboxes
+    const foodGrid = document.getElementById('foodCheckboxGrid');
+    partyFoodItems.forEach(item => {
+        const label = document.createElement('label');
+        label.className = 'food-check-item';
+        label.innerHTML = `<input type="checkbox" value="${item}" onchange="toggleFoodItem(this)"> ${item}`;
+        foodGrid.appendChild(label);
+    });
+
+    function toggleFoodItem(cb) {
+        cb.closest('.food-check-item').classList.toggle('selected', cb.checked);
+    }
+
+    function selectPack(packName) {
+        document.getElementById('partyPackSize').value = packName;
+        document.querySelector('.party-form-wrapper').scrollIntoView({ behavior: 'smooth' });
+    }
+
+    function submitPartyPack() {
+        const name = document.getElementById('partyName').value.trim();
+        const phone = document.getElementById('partyPhone').value.trim();
+        const people = document.getElementById('partyPeople').value.trim();
+        const date = document.getElementById('partyDate').value;
+        const checkedFoods = [...document.querySelectorAll('#foodCheckboxGrid input:checked')].map(c => c.value);
+
+        if (!name || !phone || !people || !date) {
+            alert('Please fill required fields.');
+            return;
+        }
+        if (checkedFoods.length === 0) {
+            alert('Select at least one food item.');
+            return;
+        }
+
+        const eventType = document.getElementById('partyEventType').value || 'Not specified';
+        const packSize = document.getElementById('partyPackSize').value || 'Not specified';
+        const delivery = document.getElementById('partyDelivery').value || 'Not specified';
+        const address = document.getElementById('partyAddress').value || 'N/A';
+        const notes = document.getElementById('partyNotes').value || 'None';
+
+        const msg = encodeURIComponent(
+`🎉 PARTY PACK BOOKING
+
+👤 Name: ${name}
+📞 Phone: ${phone}
+🎊 Event: ${eventType}
+📦 Pack: ${packSize}
+👥 People: ${people}
+📅 Date: ${date}
+🚚 Delivery: ${delivery}
+📍 Address: ${address}
+
+🍽️ Food Items: ${checkedFoods.join(', ')}
+
+📝 Notes: ${notes}`
+        );
+
+        document.getElementById('partyFormInner').style.display = 'none';
+        document.getElementById('partySuccess').style.display = 'block';
+
+        setTimeout(() => {
+            window.open(`https://wa.me/9779804650880?text=${msg}`, '_blank');
+        }, 900);
+    }
+
+    // MOBILE NAV
+    function mobileNavClick(section, el) {
+        document.querySelectorAll('.bottom-nav-item').forEach(b => b.classList.remove('active'));
+        if (el) el.classList.add('active');
+    }
+
+    function scrollToParty() {
+        document.getElementById('party').scrollIntoView({ behavior: 'smooth' });
+    }
+
+    window.addEventListener('scroll', () => {
+        const partyRect = document.getElementById('party').getBoundingClientRect();
+        const homeBtn = document.getElementById('nav-home');
+        const partyBtn = document.getElementById('nav-party');
+        if (partyRect.top < window.innerHeight * 0.6 && partyRect.bottom > 0) {
+            homeBtn && homeBtn.classList.remove('active');
+            partyBtn && partyBtn.classList.add('active');
+        } else {
+            partyBtn && partyBtn.classList.remove('active');
+            homeBtn && homeBtn.classList.add('active');
+        }
+    });
+
+    // ====== CHATBOT FUNCTIONS ======
+    let conversationHistory = [];
+    let isBotTyping = false;
+
+    function toggleChat() {
+        const win = document.getElementById('chatWindow');
+        win.classList.toggle('open');
+        if (win.classList.contains('open')) document.getElementById('chatInput').focus();
+    }
+
+    function openChatDirect() {
+        const win = document.getElementById('chatWindow');
+        win.classList.add('open');
+        document.getElementById('chatInput').focus();
+    }
+
+    function quickAsk(text) {
+        document.getElementById('chatInput').value = text;
+        document.getElementById('quickReplies').style.display = 'none';
+        sendChatMessage();
+    }
+
+    function handleChatKeypress(e) {
+        if (e.key === 'Enter') sendChatMessage();
+    }
+
+    function addMessage(text, type) {
+        const messages = document.getElementById('chatMessages');
+        const div = document.createElement('div');
+        div.className = `message ${type}`;
+        div.innerHTML = `<div class="message-bubble">${text}</div>`;
+        messages.appendChild(div);
+        messages.scrollTop = messages.scrollHeight;
+    }
+
+    function showTyping() {
+        const messages = document.getElementById('chatMessages');
+        const div = document.createElement('div');
+        div.className = 'message bot';
+        div.id = 'typingIndicator';
+        div.innerHTML = `<div class="typing-indicator"><div class="typing-dot"></div><div class="typing-dot"></div><div class="typing-dot"></div></div>`;
+        messages.appendChild(div);
+        messages.scrollTop = messages.scrollHeight;
+    }
+
+    function removeTyping() {
+        const el = document.getElementById('typingIndicator');
+        if (el) el.remove();
+    }
+async function sendChatMessage() {
+        const input = document.getElementById('chatInput');
+        const text = input.value.trim();
+        if (!text || isBotTyping) return;
+
+        input.value = '';
+        document.getElementById('sendBtn').disabled = true;
+        isBotTyping = true;
+
+        addMessage(text, 'user');
+        conversationHistory.push({ role: 'user', content: text });
+        showTyping();
+
+        try {
+            const response = await fetch(NVIDIA_API_URL, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${NVIDIA_API_KEY}`
+                },
+                body: JSON.stringify({
+                    model: 'deepseek-ai/deepseek-r1',
+                    messages: [
+                        {
+                            role: 'system',
+                            content: `You are a friendly AI assistant for Grill Father Restaurant, Kathmandu, Nepal.
+
+DETAILS:
+📍 Mid Baneshwor, Near Apex College
+📞 9709035651
+📧 GrillFatherRestro@gmail.com
+
+MENU: Burgers, Sandwiches, Pizza, Grilled items, Biryani, Bakery items, Drinks, Party Packs available.
+
+RULES: Be warm, concise. Keep under 100 words. Use emojis. Direct orders to "Order Now" button or WhatsApp.`
+                        },
+                        ...conversationHistory
+                    ],
+                    temperature: 0.7,
+                    max_tokens: 300,
+                    stream: false
+                })
+            });
+
+            removeTyping();
+
+            if (!response.ok) {
+                throw new Error(`API Error: ${response.status}`);
+            }
+
+            const data = await response.json();
+            const reply = data.choices?.[0]?.message?.content || "Sorry, I couldn't respond. Try again.";
+            
+            addMessage(reply, 'bot');
+            conversationHistory.push({ role: 'assistant', content: reply });
+        } catch (err) {
+            removeTyping();
+            addMessage(`⚠️ ${err.message}. Please try again.`, 'bot');
+        }
+
+        isBotTyping = false;
+        document.getElementById('sendBtn').disabled = false;
+        input.focus();
+    }
+
+    // QUICK WHATSAPP ORDER
+    function quickWhatsApp(itemName) {
+        const msg = encodeURIComponent(`🍽️ Quick Order\n\n📦 Item: ${itemName}\n\nHello! I want to order ${itemName}. Please confirm availability and price.`);
+        window.open(`https://wa.me/9779804650880?text=${msg}`, '_blank');
+    }
+
+    // MENU OVERLAY
+    function openNav() {
+        document.getElementById('myNav').style.width = '100%';
+        if (!document.getElementById('fullMenuContent').innerHTML.trim()) buildFullMenu();
+    }
+
+    function closeNav() {
+        document.getElementById('myNav').style.width = '0';
+    }
+
+    function buildFullMenu() {
+        const categories = {
+            "🍔 Grills & Mains": ["Grill Chicken","Mutton Sekuwa","Chicken Tikka","Chicken Sizzler","Mix Grill Platter"],
+            "🍕 Pizza & Pasta": ["Special Pizza","Zorba Pizza","Spaghetti Carbonara"],
+            "🥪 Sandwiches": ["Burger & Sandwich","Club Sandwich"],
+            "🍚 Rice & Biryani": ["Biryaani","Jeera Rice","Thali options"],
+            "🎂 Bakery": ["Cakes","Donuts","Muffins","Pastry"],
+            "☕ Drinks": ["Cold Coffee","Milkshake","Lassi","Cappuccino"]
+        };
+        let html = '';
+        for (const [cat, items] of Object.entries(categories)) {
+            html += `<div class="menu-cat"><h3>${cat}</h3><ul>`;
+            items.forEach(i => { html += `<li style="padding:4px 0;">${i}</li>`; });
+            html += `</ul></div>`;
+        }
+        document.getElementById('fullMenuContent').innerHTML = html;
+    }
+
+    // ORDER MODAL
+    function openModal(item) {
+        document.getElementById('orderModal').style.display = 'block';
+        if (item) document.getElementById('orderName').value = item;
+    }
+
+    function closeModal() {
+        document.getElementById('orderModal').style.display = 'none';
+    }
+
+    function showSuggestions(val) {
+        const box = document.getElementById('suggestions');
+        if (!val) { box.style.display = 'none'; return; }
+        const matches = menuItems.filter(i => i.toLowerCase().includes(val.toLowerCase()));
+        if (!matches.length) { box.style.display = 'none'; return; }
+        box.style.display = 'block';
+        box.innerHTML = matches.map(m => `<div class="suggestion-item" onclick="selectSuggestion('${m}')">${m}</div>`).join('');
+    }
+
+    function selectSuggestion(val) {
+        document.getElementById('orderName').value = val;
+        document.getElementById('suggestions').style.display = 'none';
+    }
+
+    function sendOrder(type) {
+        const name = document.getElementById('custName').value.trim();
+        const item = document.getElementById('orderName').value.trim();
+        const phone = document.getElementById('custPhone').value.trim();
+        const table = document.getElementById('tableNum').value.trim();
+
+        if (!name || !item || !phone) { alert('Fill all required fields.'); return; }
+
+        const msg = encodeURIComponent(`🍽️ Order from Website\n\n👤 Name: ${name}\n📦 Item: ${item}\n📞 Phone: ${phone}\n🪑 Table: ${table || 'N/A'}\n🏷️ Type: ${type}`);
+        window.open(`https://wa.me/9779804650880?text=${msg}`, '_blank');
+        closeModal();
+    }
+
+    window.onclick = function(e) {
+        if (e.target === document.getElementById('orderModal')) closeModal();
+    };
+</script>
+</body>
+</html>
+
