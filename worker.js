@@ -2,7 +2,7 @@ export default {
   async fetch(request, env) {
     const corsHeaders = {
       "Access-Control-Allow-Origin": "*",
-      "Access-Control-Allow-Methods": "POST, GET, OPTIONS",
+      "Access-Control-Allow-Methods": "POST, OPTIONS",
       "Access-Control-Allow-Headers": "Content-Type",
     };
 
@@ -10,75 +10,129 @@ export default {
       return new Response(null, { headers: corsHeaders });
     }
 
-    // ✅ GET = GitHub बाट website fetch गरेर serve गर्छ
-    if (request.method === "GET") {
-      const res = await fetch("https://n-technician.github.io/Grill-father/");
-      const body = await res.text();
-      return new Response(body, {
-        headers: { "Content-Type": "text/html; charset=UTF-8" },
+    if (request.method !== "POST") {
+      return new Response(JSON.stringify({ error: "Only POST allowed" }), {
+        status: 405,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
 
-    // ✅ POST = AI chatbot
-    if (request.method !== "POST") {
-      return new Response("Method not allowed", { status: 405, headers: corsHeaders });
-    }
-
     try {
-      const body = await request.json();
-      const response = await fetch("https://integrate.api.nvidia.com/v1/chat/completions", {
+      const { messages } = await request.json();
+
+      if (!messages || !Array.isArray(messages)) {
+        return new Response(JSON.stringify({ reply: "Invalid message format" }), {
+          status: 400,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+
+      if (!env.NVIDIA_API_KEY) {
+        console.error("NVIDIA_API_KEY not set");
+        return new Response(JSON.stringify({ reply: "Server configuration error" }), {
+          status: 500,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+
+      const nvidiaResponse = await fetch("https://integrate.api.nvidia.com/v1/chat/completions", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
           "Authorization": `Bearer ${env.NVIDIA_API_KEY}`,
         },
         body: JSON.stringify({
-          model: "deepseek-ai/deepseek-v4-flash",
+          model: "deepseek-ai/deepseek-r1",
           messages: [
             {
               role: "system",
-              content: `You are a friendly and helpful assistant for Grill & Bakes Family Restaurant located in Kapan Marga, Kathmandu, Nepal.
+              content: `You are a friendly and helpful assistant for Grill Father Restaurant located in Mid Baneshwor, Near Apex College, Kathmandu, Nepal.
 
 RESTAURANT INFO:
-- Phone: 9709035651
-- Email: GrillFatherrestro@gmail.com
-- Location: Mid Baneshwor, Near Apex College
+📍 Location: Mid Baneshwor, Near Apex College, Kathmandu
+📞 Phone: 9709035651
+📧 Email: GrillFatherrestro@gmail.com
+🗺️ Maps: https://maps.app.goo.gl/wD33BUkBjJBoETx36
 
-MENU:
-Baked Items: Vanilla Cake, Black Forest, Red Velvet, Donuts, Muffins, Apple Pie, Pastry, Cookies
-Chicken: Chicken Chilly, Roast Chicken, Chicken Lollipop, Chicken Drumstick, Chicken Tikka, Chicken Curry, Lemon Chicken, Garlic Chicken, Grill Chicken
-Family Meals: Family Combo, Mix Grill Platter, Veg Thali, Chicken Thali, Mutton Set, Butter Naan, Paneer Masala, Jeera Rice, Biryaani
-Fast Food: Burger & Sandwich, Club Sandwich, Corn Dog, Carbonara, Spaghetti Carbonara
-Pizza: Special Pizza, Zorba Pizza
-Sekuwa: Mutton Sekuwa
-Drinks: Cold Coffee, Fresh Lime, Milkshake, Lassi, Cappuccino, Coke/Fanta
+MENU ITEMS:
+🍔 Grills & Mains: Grill Chicken, Mutton Sekuwa, Chicken Tikka, Chicken Sizzler, Mix Grill Platter, Roast Chicken, Chicken Lollipop, Chicken Drumstick, Paneer Masala, Chicken Curry, Lemon Chicken, Garlic Chicken, Chicken Chilly
 
-ORDERING:
-- Dine-In, Takeaway, and Home Delivery available
-- Orders via WhatsApp: 9779709035651
+🍕 Pizza & Pasta: Special Pizza, Zorba Pizza, Spaghetti Carbonara, Carbonara
 
-RULES:
-- Be warm, concise, and helpful
-- Answer in the same language as the customer (English or Nepali)
-- For orders, guide them to use the "Order Now" button or WhatsApp
-- Keep replies under 100 words unless detailed info is needed`
+🥪 Sandwiches: Burger & Sandwich, Club Sandwich
+
+🍚 Rice & Biryani: Biryaani, Jeera Rice, Chicken Thali, Veg Thali, Mutton Set
+
+🌭 Other Items: Corn Dog, Butter Naan
+
+🎂 Bakery: Vanilla Cake, Black Forest, Red Velvet, Donuts, Muffins, Apple Pie, Pastry, Cookies
+
+☕ Drinks & Beverages: Cold Coffee, Fresh Lime, Milkshake, Lassi, Cappuccino, Coke/Fanta, Family Combo
+
+🎉 PARTY PACKS (Min 10 people):
+- Small Pack (10-20): Burger/Sandwich + Drinks + 1 special item
+- Medium Pack (20-40): Burger + Biryani + Pizza + Drinks + 2 special items [MOST POPULAR]
+- Large Pack (40-80): Full menu variety + Drinks + Desserts
+- Custom Pack (80+): Fully customized with dedicated support
+
+ORDERING OPTIONS:
+✅ Dine-In: Eat at the restaurant
+✅ Takeaway: Pack and take home
+✅ Home Delivery: We deliver to your location
+✅ WhatsApp Orders: 9779709035651
+
+INTERACTION STYLE:
+- Be warm, friendly, and concise
+- Keep responses SHORT (2-3 sentences max)
+- Use emojis to make it engaging
+- Answer in English or Nepali based on customer's language
+- For orders: Direct them to "Order Now" button or WhatsApp
+- For party packs: Direct them to "Party Pack" section
+- Never give specific prices - tell them to order for current rates`,
             },
-            ...(body.messages || [])
+            ...messages,
           ],
           temperature: 0.7,
-          max_tokens: 400,
+          max_tokens: 300,
           stream: false,
         }),
       });
-      const data = await response.json();
-      return new Response(JSON.stringify(data), {
+
+      if (!nvidiaResponse.ok) {
+        const errorData = await nvidiaResponse.text();
+        console.error("NVIDIA API Error:", nvidiaResponse.status, errorData);
+        return new Response(
+          JSON.stringify({
+            reply: `⚠️ Service temporarily unavailable. Please try again in a moment.`,
+          }),
+          {
+            status: 200,
+            headers: { ...corsHeaders, "Content-Type": "application/json" },
+          }
+        );
+      }
+
+      const data = await nvidiaResponse.json();
+      console.log("NVIDIA Response:", JSON.stringify(data));
+
+      // Extract the actual response from NVIDIA's format
+      const reply = data.choices?.[0]?.message?.content || "Sorry, I couldn't generate a response.";
+
+      return new Response(JSON.stringify({ reply }), {
+        status: 200,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     } catch (err) {
-      return new Response(JSON.stringify({ error: err.message }), {
-        status: 500,
-        headers: corsHeaders,
-      });
+      console.error("Worker Error:", err.message);
+      return new Response(
+        JSON.stringify({
+          reply: `❌ Error: ${err.message}. Please try again.`,
+        }),
+        {
+          status: 200,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        }
+      );
     }
   },
 };
@@ -86,5 +140,3 @@ RULES:
 
 
 
-
-          
