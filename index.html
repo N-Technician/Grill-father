@@ -447,14 +447,14 @@
 </nav>
 
 <script>
+   
+    <script>
     // ============================================
-    // CONFIGURATION - GITHUB SERVERLESS APPROACH
+    // GROQ AI CONFIGURATION
     // ============================================
-    // Using Vercel or Netlify's free tier to proxy NVIDIA API calls
-    // OR using a simple fetch with CORS handling
-    
-    const NVIDIA_API_KEY = "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"; // Replace with YOUR API KEY
-    const NVIDIA_API_URL = "https://integrate.api.nvidia.com/v1/chat/completions";
+
+    const GROQ_API_KEY = "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";
+    const GROQ_API_URL = "https://api.groq.com/openai/v1/chat/completions";
 
     const menuItems = [
         "Vanilla Cake","Black Forest","Red Velvet","Donuts","Muffins","Apple Pie","Pastry","Cookies",
@@ -466,100 +466,6 @@
         "Special Pizza","Zorba Pizza","Spaghetti Carbonara","Chicken Sizzler"
     ];
 
-    const partyFoodItems = [
-        "🍔 Burger","🥪 Sandwich","🍕 Pizza","🍗 Grill Chicken","🍚 Biryaani",
-        "🥩 Mutton Sekuwa","🍖 Chicken Tikka","🍳 Chicken Sizzler","🌭 Corn Dog",
-        "🍜 Spaghetti","🍛 Chicken Thali","🍛 Veg Thali","🫓 Naan","🍰 Pastry",
-        "☕ Cold Coffee","🥤 Milkshake","🧃 Fresh Lime","🥛 Lassi"
-    ];
-
-    // Build party food checkboxes
-    const foodGrid = document.getElementById('foodCheckboxGrid');
-    partyFoodItems.forEach(item => {
-        const label = document.createElement('label');
-        label.className = 'food-check-item';
-        label.innerHTML = `<input type="checkbox" value="${item}" onchange="toggleFoodItem(this)"> ${item}`;
-        foodGrid.appendChild(label);
-    });
-
-    function toggleFoodItem(cb) {
-        cb.closest('.food-check-item').classList.toggle('selected', cb.checked);
-    }
-
-    function selectPack(packName) {
-        document.getElementById('partyPackSize').value = packName;
-        document.querySelector('.party-form-wrapper').scrollIntoView({ behavior: 'smooth' });
-    }
-
-    function submitPartyPack() {
-        const name = document.getElementById('partyName').value.trim();
-        const phone = document.getElementById('partyPhone').value.trim();
-        const people = document.getElementById('partyPeople').value.trim();
-        const date = document.getElementById('partyDate').value;
-        const checkedFoods = [...document.querySelectorAll('#foodCheckboxGrid input:checked')].map(c => c.value);
-
-        if (!name || !phone || !people || !date) {
-            alert('Please fill required fields.');
-            return;
-        }
-        if (checkedFoods.length === 0) {
-            alert('Select at least one food item.');
-            return;
-        }
-
-        const eventType = document.getElementById('partyEventType').value || 'Not specified';
-        const packSize = document.getElementById('partyPackSize').value || 'Not specified';
-        const delivery = document.getElementById('partyDelivery').value || 'Not specified';
-        const address = document.getElementById('partyAddress').value || 'N/A';
-        const notes = document.getElementById('partyNotes').value || 'None';
-
-        const msg = encodeURIComponent(
-`🎉 PARTY PACK BOOKING
-
-👤 Name: ${name}
-📞 Phone: ${phone}
-🎊 Event: ${eventType}
-📦 Pack: ${packSize}
-👥 People: ${people}
-📅 Date: ${date}
-🚚 Delivery: ${delivery}
-📍 Address: ${address}
-
-🍽️ Food Items: ${checkedFoods.join(', ')}
-
-📝 Notes: ${notes}`
-        );
-
-        document.getElementById('partyFormInner').style.display = 'none';
-        document.getElementById('partySuccess').style.display = 'block';
-
-        setTimeout(() => {
-            window.open(`https://wa.me/9779804650880?text=${msg}`, '_blank');
-        }, 900);
-    }
-// MOBILE NAV
-    function mobileNavClick(section, el) {
-        document.querySelectorAll('.bottom-nav-item').forEach(b => b.classList.remove('active'));
-        if (el) el.classList.add('active');
-    }
-
-    function scrollToParty() {
-        document.getElementById('party').scrollIntoView({ behavior: 'smooth' });
-    }
-
-    window.addEventListener('scroll', () => {
-        const partyRect = document.getElementById('party').getBoundingClientRect();
-        const homeBtn = document.getElementById('nav-home');
-        const partyBtn = document.getElementById('nav-party');
-        if (partyRect.top < window.innerHeight * 0.6 && partyRect.bottom > 0) {
-            homeBtn && homeBtn.classList.remove('active');
-            partyBtn && partyBtn.classList.add('active');
-        } else {
-            partyBtn && partyBtn.classList.remove('active');
-            homeBtn && homeBtn.classList.add('active');
-        }
-    });
-
     // ====== CHATBOT FUNCTIONS ======
     let conversationHistory = [];
     let isBotTyping = false;
@@ -567,7 +473,10 @@
     function toggleChat() {
         const win = document.getElementById('chatWindow');
         win.classList.toggle('open');
-        if (win.classList.contains('open')) document.getElementById('chatInput').focus();
+
+        if (win.classList.contains('open')) {
+            document.getElementById('chatInput').focus();
+        }
     }
 
     function openChatDirect() {
@@ -583,75 +492,127 @@
     }
 
     function handleChatKeypress(e) {
-        if (e.key === 'Enter') sendChatMessage();
+        if (e.key === 'Enter') {
+            sendChatMessage();
+        }
     }
 
     function addMessage(text, type) {
         const messages = document.getElementById('chatMessages');
+
         const div = document.createElement('div');
         div.className = `message ${type}`;
-        div.innerHTML = `<div class="message-bubble">${text}</div>`;
+
+        div.innerHTML = `
+            <div class="message-bubble">
+                ${text}
+            </div>
+        `;
+
         messages.appendChild(div);
         messages.scrollTop = messages.scrollHeight;
     }
 
     function showTyping() {
         const messages = document.getElementById('chatMessages');
+
         const div = document.createElement('div');
         div.className = 'message bot';
         div.id = 'typingIndicator';
-        div.innerHTML = `<div class="typing-indicator"><div class="typing-dot"></div><div class="typing-dot"></div><div class="typing-dot"></div></div>`;
+
+        div.innerHTML = `
+            <div class="typing-indicator">
+                <div class="typing-dot"></div>
+                <div class="typing-dot"></div>
+                <div class="typing-dot"></div>
+            </div>
+        `;
+
         messages.appendChild(div);
         messages.scrollTop = messages.scrollHeight;
     }
 
     function removeTyping() {
         const el = document.getElementById('typingIndicator');
-        if (el) el.remove();
+
+        if (el) {
+            el.remove();
+        }
     }
 
     async function sendChatMessage() {
+
         const input = document.getElementById('chatInput');
         const text = input.value.trim();
+
         if (!text || isBotTyping) return;
 
         input.value = '';
+
         document.getElementById('sendBtn').disabled = true;
         isBotTyping = true;
 
         addMessage(text, 'user');
-        conversationHistory.push({ role: 'user', content: text });
+
+        conversationHistory.push({
+            role: 'user',
+            content: text
+        });
+
         showTyping();
 
         try {
-            const response = await fetch(NVIDIA_API_URL, {
+
+            const response = await fetch(GROQ_API_URL, {
+
                 method: 'POST',
+
                 headers: {
                     'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${NVIDIA_API_KEY}`
+                    'Authorization': `Bearer ${GROQ_API_KEY}`
                 },
+
                 body: JSON.stringify({
-                    model: 'deepseek-ai/deepseek-r1',
+
+                    model: 'llama-3.3-70b-versatile',
+
                     messages: [
+
                         {
                             role: 'system',
-                            content: `You are a friendly AI assistant for Grill Father Restaurant, Kathmandu, Nepal.
+                            content: `
+You are the official AI assistant of Grill Father Restaurant in Kathmandu, Nepal.
 
-DETAILS:
+Restaurant Details:
 📍 Mid Baneshwor, Near Apex College
 📞 9709035651
 📧 GrillFatherRestro@gmail.com
 
-MENU: Burgers, Sandwiches, Pizza, Grilled items, Biryani, Bakery items, Drinks, Party Packs available.
+Menu:
+Burger, Pizza, Sandwich, Grill Chicken, Mutton Sekuwa, Biryani,
+Cold Coffee, Milkshake, Bakery Items, Party Packs.
 
-RULES: Be warm, concise. Keep under 100 words. Use emojis. Direct orders to "Order Now" button or WhatsApp.`
+Rules:
+- Be friendly and professional
+- Use emojis naturally
+- Keep replies short
+- Help users with menu, orders, location and party packs
+- Suggest WhatsApp for ordering
+- Never say you are an AI language model
+- Reply like a real restaurant assistant
+`
                         },
+
                         ...conversationHistory
+
                     ],
+
                     temperature: 0.7,
                     max_tokens: 300,
                     stream: false
+
                 })
+
             });
 
             removeTyping();
@@ -661,30 +622,58 @@ RULES: Be warm, concise. Keep under 100 words. Use emojis. Direct orders to "Ord
             }
 
             const data = await response.json();
-            const reply = data.choices?.[0]?.message?.content || "Sorry, I couldn't respond. Try again.";
-            
+
+            const reply =
+                data.choices?.[0]?.message?.content ||
+                "Sorry, I couldn't respond right now.";
+
             addMessage(reply, 'bot');
-            conversationHistory.push({ role: 'assistant', content: reply });
+
+            conversationHistory.push({
+                role: 'assistant',
+                content: reply
+            });
+
         } catch (err) {
+
             removeTyping();
-            addMessage(`⚠️ ${err.message}. Please try again.`, 'bot');
+
+            addMessage(
+                "⚠️ AI server error. Please try again later.",
+                'bot'
+            );
+
+            console.error(err);
         }
 
         isBotTyping = false;
+
         document.getElementById('sendBtn').disabled = false;
+
         input.focus();
     }
 
     // QUICK WHATSAPP ORDER
     function quickWhatsApp(itemName) {
-        const msg = encodeURIComponent(`🍽️ Quick Order\n\n📦 Item: ${itemName}\n\nHello! I want to order ${itemName}. Please confirm availability and price.`);
-        window.open(`https://wa.me/9779804650880?text=${msg}`, '_blank');
+
+        const msg = encodeURIComponent(
+            `🍽️ Quick Order\n\n📦 Item: ${itemName}\n\nHello! I want to order ${itemName}.`
+        );
+
+        window.open(
+            `https://wa.me/9779804650880?text=${msg}`,
+            '_blank'
+        );
     }
 
     // MENU OVERLAY
     function openNav() {
+
         document.getElementById('myNav').style.width = '100%';
-        if (!document.getElementById('fullMenuContent').innerHTML.trim()) buildFullMenu();
+
+        if (!document.getElementById('fullMenuContent').innerHTML.trim()) {
+            buildFullMenu();
+        }
     }
 
     function closeNav() {
@@ -692,63 +681,65 @@ RULES: Be warm, concise. Keep under 100 words. Use emojis. Direct orders to "Ord
     }
 
     function buildFullMenu() {
+
         const categories = {
-            "🍔 Grills & Mains": ["Grill Chicken","Mutton Sekuwa","Chicken Tikka","Chicken Sizzler","Mix Grill Platter"],
-            "🍕 Pizza & Pasta": ["Special Pizza","Zorba Pizza","Spaghetti Carbonara"],
-            "🥪 Sandwiches": ["Burger & Sandwich","Club Sandwich"],
-            "🍚 Rice & Biryani": ["Biryaani","Jeera Rice","Thali options"],
-            "🎂 Bakery": ["Cakes","Donuts","Muffins","Pastry"],
-            "☕ Drinks": ["Cold Coffee","Milkshake","Lassi","Cappuccino"]
+
+            "🍔 Grills & Mains": [
+                "Grill Chicken",
+                "Mutton Sekuwa",
+                "Chicken Tikka",
+                "Chicken Sizzler",
+                "Mix Grill Platter"
+            ],
+
+            "🍕 Pizza & Pasta": [
+                "Special Pizza",
+                "Zorba Pizza",
+                "Spaghetti Carbonara"
+            ],
+
+            "🥪 Sandwiches": [
+                "Burger & Sandwich",
+                "Club Sandwich"
+            ],
+
+            "🍚 Rice & Biryani": [
+                "Biryaani",
+                "Jeera Rice",
+                "Thali options"
+            ],
+
+            "🎂 Bakery": [
+                "Cakes",
+                "Donuts",
+                "Muffins",
+                "Pastry"
+            ],
+
+            "☕ Drinks": [
+                "Cold Coffee",
+                "Milkshake",
+                "Lassi",
+                "Cappuccino"
+            ]
         };
+
         let html = '';
+
         for (const [cat, items] of Object.entries(categories)) {
+
             html += `<div class="menu-cat"><h3>${cat}</h3><ul>`;
-            items.forEach(i => { html += `<li style="padding:4px 0;">${i}</li>`; });
+
+            items.forEach(i => {
+                html += `<li style="padding:4px 0;">${i}</li>`;
+            });
+
             html += `</ul></div>`;
         }
+
         document.getElementById('fullMenuContent').innerHTML = html;
     }
 
-    // ORDER MODAL
-    function openModal(item) {
-        document.getElementById('orderModal').style.display = 'block';
-        if (item) document.getElementById('orderName').value = item;
-    }
-
-    function closeModal() {
-        document.getElementById('orderModal').style.display = 'none';
-    }
-
-    function showSuggestions(val) {
-        const box = document.getElementById('suggestions');
-        if (!val) { box.style.display = 'none'; return; }
-        const matches = menuItems.filter(i => i.toLowerCase().includes(val.toLowerCase()));
-        if (!matches.length) { box.style.display = 'none'; return; }
-        box.style.display = 'block';
-        box.innerHTML = matches.map(m => `<div class="suggestion-item" onclick="selectSuggestion('${m}')">${m}</div>`).join('');
-    }
-
-    function selectSuggestion(val) {
-        document.getElementById('orderName').value = val;
-        document.getElementById('suggestions').style.display = 'none';
-    }
-
-    function sendOrder(type) {
-        const name = document.getElementById('custName').value.trim();
-        const item = document.getElementById('orderName').value.trim();
-        const phone = document.getElementById('custPhone').value.trim();
-        const table = document.getElementById('tableNum').value.trim();
-
-        if (!name || !item || !phone) { alert('Fill all required fields.'); return; }
-
-        const msg = encodeURIComponent(`🍽️ Order from Website\n\n👤 Name: ${name}\n📦 Item: ${item}\n📞 Phone: ${phone}\n🪑 Table: ${table || 'N/A'}\n🏷️ Type: ${type}`);
-        window.open(`https://wa.me/9779804650880?text=${msg}`, '_blank');
-        closeModal();
-    }
-
-    window.onclick = function(e) {
-        if (e.target === document.getElementById('orderModal')) closeModal();
-    };
 </script>
 </body>
 </html>
